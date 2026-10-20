@@ -24,6 +24,7 @@
     --alert:#F07167; --ok:#6CC77F; color-scheme:dark; }
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);
   font-family:ui-rounded,"SF Pro Rounded","Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -310,10 +311,11 @@ $("push").addEventListener("click", async () => {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(S.vapid) });
     await api("subscribe", { sub: sub.toJSON() });
-    msg.textContent = "Cet appareil recevra les alertes."; $("test").hidden = false;
+    msg.textContent = "Cet appareil recevra les alertes."; S.subs = (S.subs || 0) + 1; $("test").hidden = false;
   } catch (e) { msg.textContent = "Activation impossible : " + e.message; }
 });
 $("test").addEventListener("click", async () => {
+  if (!S.subs) { $("pushmsg").textContent = "Aucun appareil n'est encore inscrit : touchez d'abord « Recevoir les alertes sur cet appareil »."; return; }
   try { await api("test"); $("pushmsg").textContent = "Alerte de test envoyée : elle doit arriver d'ici une minute."; } catch { $("pushmsg").textContent = "Envoi impossible : vérifiez la connexion."; }
 });
 $("stop").addEventListener("click", async () => {
