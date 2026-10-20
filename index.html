@@ -139,7 +139,7 @@ footer button{background:none;border:0;color:var(--eur);text-decoration:underlin
     <div class="row"><label for="p-drop">Baisse du bitcoin en 24 h au-delà de (%)</label><input type="number" inputmode="numeric" min="0" max="50" class="num" id="p-drop"></div>
     <div class="row"><label for="p-weekly">Bilan chaque dimanche</label><input type="checkbox" role="switch" class="switch" id="p-weekly"></div>
     <div class="row"><label for="p-down">Panne du moteur</label><input type="checkbox" role="switch" class="switch" id="p-down"></div>
-    <p class="note">L'arrêt de sécurité à −50 % est toujours signalé. Mettre la baisse à 0 coupe cette alerte.</p>
+    <p class="note">Mettre la baisse à 0 coupe cette alerte.</p>
     <button class="btn primary" id="push">Recevoir les alertes sur cet appareil</button>
     <button class="btn" id="test" hidden>Envoyer une alerte de test</button>
     <p class="note" id="pushmsg"></p>
@@ -246,7 +246,9 @@ function render() {
     const gap = 100 * (r - 1);
     $("rail").setAttribute("aria-label", `Le bitcoin est ${nf(Math.abs(gap))} % ${gap >= 0 ? "au-dessus" : "en dessous"} de sa tendance`);
     const btc = S.btc ? `Bitcoin : ${eur(S.btc.price_eur, 0)}${S.ch24 !== null ? ` (${pct(S.ch24)} en 24 h)` : ""}. ` : "";
-    $("explain").textContent = btc + (inBtc
+    $("explain").textContent = btc + (S.live === "HOLD_BTC"
+      ? `Il est ${nf(Math.abs(gap))} % ${gap >= 0 ? "au-dessus" : "en dessous"} de sa tendance des 5 derniers mois. Le module le garde quoi qu'il arrive, pour viser la plus forte hausse possible.`
+      : inBtc
       ? `Il est ${nf(Math.abs(gap))} % ${gap >= 0 ? "au-dessus" : "en dessous"} de sa tendance des 5 derniers mois. S'il passe dans la zone euros, le module revend pour protéger votre argent.`
       : `Il est ${nf(Math.abs(gap))} % ${gap >= 0 ? "au-dessus" : "en dessous"} de sa tendance des 5 derniers mois. S'il passe dans la zone bitcoin, le module rachète.`);
   }
@@ -283,6 +285,7 @@ function render() {
 
   $("stoptxt").textContent = S.stopped
     ? "Le module est arrêté : il n'achète et ne vend plus rien. Vous pouvez le relancer à tout moment."
+    : S.stop_pct >= 100 ? "Bloque immédiatement tout achat et toute vente. Il n'y a pas d'arrêt automatique : vous seul pouvez arrêter le module."
     : `Bloque immédiatement tout achat et toute vente. Le module s'arrête aussi tout seul si le portefeuille passe sous ${eur(S.capital * (1 - S.stop_pct / 100), 0)}.`;
   $("stop").textContent = S.stopped ? "Relancer le module" : "Arrêter le module";
   $("upd").textContent = "Mis à jour à " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) + ".";
