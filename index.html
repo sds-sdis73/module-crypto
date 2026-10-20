@@ -85,6 +85,10 @@ details summary::after{content:"+";float:right;color:var(--muted)}
 details[open] summary::after{content:"–"}
 details ol{padding-left:1.3rem;margin:.8rem 0 0}
 details li{margin:.55rem 0}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:.6rem 0 .4rem}
+.duo div{border:1px solid var(--line);border-radius:12px;padding:.6rem .8rem}
+.duo b{display:block;font-size:1.5rem}
+.key{display:inline-block;width:.8rem;height:3px;vertical-align:middle;margin-right:.35rem}
 footer{text-align:center;font-size:.85rem;color:var(--muted);margin-top:1.4rem}
 footer button{background:none;border:0;color:var(--eur);text-decoration:underline;cursor:pointer}
 #login{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;padding:24px;z-index:9}
@@ -121,6 +125,15 @@ footer button{background:none;border:0;color:var(--eur);text-decoration:underlin
     <div class="legend"><span>Zone euros</span><span>Tendance</span><span>Zone bitcoin</span></div>
     <p class="explain" id="explain"></p>
   </div>
+
+  <section id="t15" hidden>
+    <h2>Test de l'option 2 : rotation rapide</h2>
+    <p class="note" id="t15-intro"></p>
+    <div class="duo"><div><small><span class="key" style="background:var(--ink)"></span>Rotation rapide</small><b id="t15-m"></b><small id="t15-mp"></small></div>
+      <div><small><span class="key" style="background:var(--btc)"></span>Bitcoin seul</small><b id="t15-b"></b><small id="t15-bp"></small></div></div>
+    <div id="t15-chart"></div>
+    <ul class="list" id="t15-list"></ul>
+  </section>
 
   <section class="chart">
     <h2>Évolution du portefeuille</h2>
@@ -191,6 +204,14 @@ const NAMES = {
   META_SELECT: "La meilleure méthode du moment",
   META_BLEND: "Mélange des meilleures méthodes"
 };
+const T15 = {
+  META15: "Rotation rapide : suit la meilleure méthode des 6 dernières heures",
+  MOM4H_TOP3: "Les 3 plus fortes hausses sur 4 h",
+  MOM24H_TOP3: "Les 3 plus fortes hausses sur 24 h",
+  MOM24H_TOP5: "Les 5 plus fortes hausses sur 24 h",
+  REBOND4H_TOP3: "Les 3 plus fortes baisses sur 4 h, pari sur le rebond",
+  BTC_HOLD: "Bitcoin seul, pour comparer"
+};
 const $ = id => document.getElementById(id);
 const nf = (v, d = 1) => Math.abs(v).toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d });
 const pct = v => (v >= 0 ? "+" : "−") + nf(v) + " %";
@@ -218,7 +239,33 @@ async function load() {
   $("login").classList.remove("on"); $("app").hidden = false; render();
 }
 
+function renderT15() {
+  const t = S.test15;
+  if (!t || !t.state || !t.latest) { $("t15").hidden = true; return; }
+  $("t15").hidden = false;
+  const L = Object.fromEntries(t.latest.map(x => [x.method, x]));
+  const day = Math.min(7, Math.floor((Date.now() - Date.parse(t.state.start)) / 864e5) + 1);
+  $("t15-intro").textContent = `Jour ${day} sur 7. Chaque méthode joue 100 € fictifs, avec les vrais frais de Kraken. La rotation suit en ce moment : « ${T15[t.state.cur] || t.state.cur} ». Pendant les 6 premières heures, elle suit le bitcoin, le temps de mesurer les autres.`;
+  const m = L.META15, b = L.BTC_HOLD;
+  if (m) { $("t15-m").textContent = eur(+m.equity); $("t15-mp").textContent = pct(+m.equity - 100); }
+  if (b) { $("t15-b").textContent = eur(+b.equity); $("t15-bp").textContent = pct(+b.equity - 100); }
+  const sm = (t.series || {}).META15 || [], sb = (t.series || {}).BTC_HOLD || [];
+  if (sm.length < 2) $("t15-chart").innerHTML = `<p class="muted">La courbe apparaîtra dans une heure.</p>`;
+  else {
+    const W = 560, H = 120, pad = 6, all = [...sm, ...sb].map(x => x[1]).concat(100);
+    const lo = Math.min(...all) * 0.995, hi = Math.max(...all) * 1.005, t0 = sm[0][0], t1 = sm[sm.length - 1][0] || t0 + 1;
+    const X = x => pad + (x - t0) / Math.max(1, t1 - t0) * (W - 2 * pad), Y = y => H - pad - (y - lo) / (hi - lo) * (H - 2 * pad);
+    const line = (a, c) => `<polyline points="${a.map(p => X(p[0]).toFixed(1) + "," + Y(p[1]).toFixed(1)).join(" ")}" fill="none" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
+    $("t15-chart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="display:block;width:100%;height:120px" role="img" aria-label="Rotation rapide comparée au bitcoin seul">
+      <line x1="0" x2="${W}" y1="${Y(100)}" y2="${Y(100)}" stroke="var(--line)" stroke-dasharray="4 4"/>${line(sb, "var(--btc)")}${line(sm, "var(--ink)")}</svg>`;
+  }
+  $("t15-list").innerHTML = t.latest.slice().sort((x, y) => y.equity - x.equity).map(x => `<li class="${x.method === "META15" ? "live" : ""}">
+    <span class="n">${T15[x.method] || x.method}</span><span class="r ${x.equity > 100 ? "pos" : x.equity < 100 ? "neg" : ""}">${pct(+x.equity - 100)}</span>
+    <span class="s">${x.holdings && x.holdings.length ? "Détient " + x.holdings.join(", ") : "En euros"}</span></li>`).join("");
+}
+
 function render() {
+  renderT15();
   const sim = S.mode === "simulation";
   $("mode").textContent = sim ? "Simulation" : "Argent réel";
   const now = Date.now(), h = S.health;
