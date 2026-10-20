@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Module crypto</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Module crypto">
+<meta name="theme-color" content="#F5F7F9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141B23" media="(prefers-color-scheme: dark)">
+<style>
+:root{
+  --bg:#F5F7F9; --card:#FFFFFF; --ink:#1D2733; --muted:#5B6B7C; --line:#DCE3EA;
+  --btc:#B7791F; --btc-soft:#F6E7CF; --eur:#2C7A7B; --eur-soft:#D6ECEC; --mid:#E6EAEF;
+  --alert:#B42318; --ok:#2F7A3E;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#141B23; --card:#1C2530; --ink:#E7EDF3; --muted:#9AA9B8; --line:#2C3846;
+    --btc:#E0A642; --btc-soft:#3A2F1C; --eur:#5FB3B3; --eur-soft:#1D3536; --mid:#2A3440;
+    --alert:#F07167; --ok:#6CC77F; color-scheme:dark; }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:ui-rounded,"SF Pro Rounded","Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:17px;line-height:1.45;font-variant-numeric:tabular-nums;
+  padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 32px)}
+main{max-width:560px;margin:0 auto}
+h1{font-size:1.05rem;font-weight:600;margin:0}
+h2{font-size:1.15rem;font-weight:650;margin:0 0 .6rem}
+p{margin:.3rem 0}
+small,.muted{color:var(--muted)}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--eur);outline-offset:2px}
+.top{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:1.2rem}
+.top h1{margin-right:auto}
+.pill{font-size:.8rem;padding:.2rem .6rem;border-radius:999px;background:var(--mid);color:var(--muted)}
+.pill.ok{background:transparent;border:1px solid var(--ok);color:var(--ok)}
+.pill.bad{background:var(--alert);color:#fff}
+.hero{padding:.4rem 0 1.4rem}
+.value{font-size:3.2rem;font-weight:700;letter-spacing:-.02em;line-height:1.05;margin:0}
+.delta{font-size:1rem;color:var(--muted)}
+.where{font-size:1.25rem;margin:1rem 0 .9rem}
+.where b{font-weight:700}
+.where.btc b{color:var(--btc)} .where.eur b{color:var(--eur)}
+.rail{position:relative;height:46px;border-radius:12px;overflow:hidden;display:flex}
+.z{height:100%}
+.z-eur{background:var(--eur-soft)} .z-mid{background:var(--mid)} .z-btc{background:var(--btc-soft)}
+.avg{position:absolute;top:6px;bottom:6px;width:2px;background:var(--muted);opacity:.6}
+.mark{position:absolute;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;
+  background:var(--ink);border:4px solid var(--card);box-shadow:0 0 0 1px var(--line);transition:left .6s ease}
+.legend{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted);margin-top:.35rem}
+.explain{font-size:.95rem;color:var(--muted);margin-top:.8rem}
+section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:1.1rem 1.1rem 1rem;margin:0 0 1rem}
+.chart svg{display:block;width:100%;height:130px}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:grid;grid-template-columns:1fr auto;gap:.1rem .8rem;padding:.65rem 0;border-top:1px solid var(--line)}
+.list li:first-child{border-top:0}
+.list .r{font-weight:650;text-align:right}
+.list .s{grid-column:1/-1;font-size:.82rem;color:var(--muted)}
+.list li.live .n{font-weight:700}
+.tag{font-size:.75rem;color:var(--btc);margin-left:.35rem}
+.pos{color:var(--ok)} .neg{color:var(--alert)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.55rem 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.switch{appearance:none;-webkit-appearance:none;width:48px;height:28px;border-radius:999px;background:var(--mid);position:relative;flex:none;cursor:pointer;transition:background .2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .2s}
+.switch:checked{background:var(--eur)} .switch:checked::after{left:23px}
+.num{width:4.2rem;padding:.35rem .5rem;border:1px solid var(--line);border-radius:10px;background:var(--bg);text-align:right}
+.btn{display:block;width:100%;padding:.8rem 1rem;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-weight:600;cursor:pointer;margin-top:.7rem}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.danger{background:transparent;color:var(--alert);border-color:var(--alert)}
+.btn:disabled{opacity:.5}
+.note{font-size:.88rem;color:var(--muted);margin-top:.5rem}
+.notes li{display:block}
+.notes .t{font-weight:600}
+details summary{cursor:pointer;font-size:1.15rem;font-weight:650;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"+";float:right;color:var(--muted)}
+details[open] summary::after{content:"–"}
+details ol{padding-left:1.3rem;margin:.8rem 0 0}
+details li{margin:.55rem 0}
+footer{text-align:center;font-size:.85rem;color:var(--muted);margin-top:1.4rem}
+footer button{background:none;border:0;color:var(--eur);text-decoration:underline;cursor:pointer}
+#login{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;padding:24px;z-index:9}
+#login.on{display:flex}
+#login form{width:100%;max-width:360px}
+#login input{width:100%;padding:.85rem 1rem;border:1px solid var(--line);border-radius:12px;background:var(--card);font-size:1.3rem;letter-spacing:.12em;text-align:center;text-transform:uppercase}
+#err{color:var(--alert);min-height:1.4em}
+@media (prefers-reduced-motion: reduce){.mark,.switch,.switch::after{transition:none}}
+</style>
+</head>
+<body>
+<div id="login" role="dialog" aria-labelledby="lt">
+  <form id="lf">
+    <h2 id="lt">Code d'accès</h2>
+    <p class="muted">Saisissez le code reçu dans la conversation avec Claude. Il ne vous sera demandé qu'une fois sur cet appareil.</p>
+    <input id="code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX" aria-label="Code d'accès">
+    <p id="err" role="alert"></p>
+    <button class="btn primary" type="submit">Ouvrir</button>
+  </form>
+</div>
+
+<main id="app" hidden>
+  <div class="top">
+    <h1>Module crypto</h1>
+    <span class="pill" id="mode">Simulation</span>
+    <span class="pill" id="health">…</span>
+  </div>
+
+  <div class="hero">
+    <p class="value" id="value">—</p>
+    <p class="delta" id="delta"></p>
+    <p class="where" id="where"></p>
+    <div class="rail" id="rail" role="img"><div class="z z-eur"></div><div class="z z-mid"></div><div class="z z-btc"></div><div class="avg"></div><div class="mark"></div></div>
+    <div class="legend"><span>Zone euros</span><span>Tendance</span><span>Zone bitcoin</span></div>
+    <p class="explain" id="explain"></p>
+  </div>
+
+  <section class="chart">
+    <h2>Évolution du portefeuille</h2>
+    <div id="chart"></div>
+  </section>
+
+  <section>
+    <h2>Les méthodes en concurrence</h2>
+    <p class="note" id="rule"></p>
+    <ul class="list" id="methods"></ul>
+  </section>
+
+  <section>
+    <h2>Alertes</h2>
+    <div class="row"><label for="p-orders">Achat ou vente</label><input type="checkbox" role="switch" class="switch" id="p-orders"></div>
+    <div class="row"><label for="p-drop">Baisse du bitcoin en 24 h au-delà de (%)</label><input type="number" inputmode="numeric" min="0" max="50" class="num" id="p-drop"></div>
+    <div class="row"><label for="p-weekly">Bilan chaque dimanche</label><input type="checkbox" role="switch" class="switch" id="p-weekly"></div>
+    <div class="row"><label for="p-down">Panne du moteur</label><input type="checkbox" role="switch" class="switch" id="p-down"></div>
+    <p class="note">L'arrêt de sécurité à −50 % est toujours signalé. Mettre la baisse à 0 coupe cette alerte.</p>
+    <button class="btn primary" id="push">Recevoir les alertes sur cet appareil</button>
+    <button class="btn" id="test" hidden>Envoyer une alerte de test</button>
+    <p class="note" id="pushmsg"></p>
+  </section>
+
+  <section>
+    <h2>Dernières alertes</h2>
+    <ul class="list notes" id="notes"></ul>
+  </section>
+
+  <section>
+    <details>
+      <summary>Ouvrir mon compte Kraken</summary>
+      <p class="note">Kraken est agréé par la Banque centrale d'Irlande au titre du règlement européen MiCA depuis juin 2025, ce qui l'autorise à opérer en France. Comptez 15 minutes, puis de quelques minutes à 48 h pour la vérification.</p>
+      <ol>
+        <li>Installez l'application « Kraken » depuis l'App Store, ou allez sur kraken.com en tapant l'adresse vous-même. Ne passez jamais par un lien sponsorisé ou reçu par message.</li>
+        <li>Créez le compte avec votre courriel personnel, un mot de passe que vous n'utilisez nulle part ailleurs et votre numéro de téléphone. Choisissez la France comme pays de résidence.</li>
+        <li>Dans les réglages de sécurité, activez la double authentification avec une application de codes (l'app Mots de passe d'Apple ou Google Authenticator).</li>
+        <li>Lancez la vérification d'identité de niveau « Intermédiaire » : carte d'identité ou passeport, puis un selfie. Un justificatif de domicile peut être demandé.</li>
+        <li>Arrêtez-vous là : ne déposez rien et n'achetez rien. Le virement de 100 € et la connexion du module se feront ensemble, avec moi, après la semaine de simulation. La clé du module pourra passer des ordres, jamais retirer de l'argent.</li>
+        <li>Au printemps, déclarez ce compte avec vos impôts sur le formulaire 3916-bis, même sans aucune vente. L'oubli coûte 750 €.</li>
+      </ol>
+    </details>
+  </section>
+
+  <section>
+    <h2>Arrêt d'urgence</h2>
+    <p class="muted" id="stoptxt"></p>
+    <button class="btn danger" id="stop"></button>
+  </section>
+
+  <footer><span id="upd"></span> <button id="refresh">Actualiser</button></footer>
+</main>
+
+<script>
+const API = "https://inggdtahvbflidcboojp.supabase.co/functions/v1/app";
+const NAMES = {
+  BTC_TREND150: "Bitcoin protégé par la tendance",
+  HOLD_BTC: "Bitcoin seul, sans jamais vendre",
+  HOLD_BTC_ETH: "Bitcoin et Ether à parts égales",
+  TREND_BTC_SMA100: "Bitcoin, tendance courte",
+  FNG_CONTRARIAN: "Bitcoin à contre-courant de la peur",
+  MOM30_TOP3: "Les 3 cryptos les plus en hausse",
+  MOM30_TOP3_REGIME: "Les 3 plus en hausse, si le marché monte",
+  VOLADJ60_REGIME: "Les 3 hausses les plus régulières",
+  FLOW_TAKER_REGIME: "Les 3 cryptos les plus achetées",
+  BREAKOUT20: "Cryptos qui battent leurs records",
+  MEANREV_RSI: "Rebonds après une chute",
+  META_SELECT: "La meilleure méthode du moment",
+  META_BLEND: "Mélange des meilleures méthodes"
+};
+const $ = id => document.getElementById(id);
+const nf = (v, d = 1) => Math.abs(v).toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = v => (v >= 0 ? "+" : "−") + nf(v) + " %";
+const eur = (v, d = 2) => v.toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d }) + " €";
+const dfmt = s => new Date(s).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+const tfmt = s => new Date(s).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+let S = null, saveT = null;
+
+function code() { return localStorage.getItem("mc_code") || ""; }
+async function api(action, extra = {}) {
+  const r = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json", "x-code": code() }, body: JSON.stringify({ action, ...extra }) });
+  if (r.status === 401) { localStorage.removeItem("mc_code"); showLogin("Code incorrect."); throw new Error("code"); }
+  const j = await r.json(); if (!j.ok) throw new Error(j.error || "erreur"); return j;
+}
+function showLogin(msg = "") { $("app").hidden = true; $("login").classList.add("on"); $("err").textContent = msg; $("code").focus(); }
+
+$("lf").addEventListener("submit", async e => {
+  e.preventDefault();
+  localStorage.setItem("mc_code", $("code").value.toUpperCase().replace(/[^A-Z0-9]/g, ""));
+  $("err").textContent = ""; await load();
+});
+
+async function load() {
+  try { S = await api("state"); } catch (e) { if (e.message !== "code") $("upd").textContent = "Connexion impossible, nouvel essai dans 1 minute."; return; }
+  $("login").classList.remove("on"); $("app").hidden = false; render();
+}
+
+function render() {
+  const sim = S.mode === "simulation";
+  $("mode").textContent = sim ? "Simulation" : "Argent réel";
+  const now = Date.now(), h = S.health;
+  const okSnap = h.last_snapshot && now - Date.parse(h.last_snapshot) < 45 * 60e3;
+  const okDaily = h.last_daily && now - Date.parse(h.last_daily) < 26 * 3600e3;
+  $("health").textContent = S.stopped ? "Arrêté" : okSnap && okDaily ? "Moteur en marche" : "Moteur en panne";
+  $("health").className = "pill " + (S.stopped || !(okSnap && okDaily) ? "bad" : "ok");
+
+  const P = S.paper, last = P[P.length - 1];
+  if (last) {
+    $("value").textContent = eur(last.equity_eur);
+    const ch = 100 * (last.equity_eur / S.capital - 1);
+    $("delta").textContent = `${pct(ch)} depuis le ${dfmt(P[0].day)}${sim ? ", argent fictif" : ""}`;
+  }
+  const d = S.decision, inBtc = d && d.position === "BTC";
+  $("where").className = "where " + (inBtc ? "btc" : "eur");
+  $("where").innerHTML = d ? `Votre argent est <b>${inBtc ? "en bitcoin" : "en euros"}</b>.` : "";
+
+  if (d) {
+    const price = S.btc ? S.btc.price_eur : d.close_eur, r = price / d.sma;
+    const x = v => Math.max(0, Math.min(100, (v - 0.7) / 0.6 * 100));
+    const z = $("rail").children;
+    z[0].style.width = x(0.97) + "%"; z[1].style.width = (x(1.03) - x(0.97)) + "%"; z[2].style.flex = "1";
+    z[3].style.left = x(1) + "%"; z[4].style.left = x(r) + "%";
+    const gap = 100 * (r - 1);
+    $("rail").setAttribute("aria-label", `Le bitcoin est ${nf(Math.abs(gap))} % ${gap >= 0 ? "au-dessus" : "en dessous"} de sa tendance`);
+    const btc = S.btc ? `Bitcoin : ${eur(S.btc.price_eur, 0)}${S.ch24 !== null ? ` (${pct(S.ch24)} en 24 h)` : ""}. ` : "";
+    $("explain").textContent = btc + (inBtc
+      ? `Il est ${nf(Math.abs(gap))} % ${gap >= 0 ? "au-dessus" : "en dessous"} de sa tendance des 5 derniers mois. S'il passe dans la zone euros, le module revend pour protéger votre argent.`
+      : `Il est ${nf(Math.abs(gap))} % ${gap >= 0 ? "au-dessus" : "en dessous"} de sa tendance des 5 derniers mois. S'il passe dans la zone bitcoin, le module rachète.`);
+  }
+
+  if (P.length < 2) $("chart").innerHTML = `<p class="muted">La courbe apparaîtra après la première nuit de calcul.</p>`;
+  else {
+    const W = 560, H = 130, pad = 6, v = P.map(p => p.equity_eur);
+    const lo = Math.min(...v, S.capital) * 0.99, hi = Math.max(...v, S.capital) * 1.01;
+    const X = i => pad + i * (W - 2 * pad) / (P.length - 1), Y = y => H - pad - (y - lo) / (hi - lo) * (H - 2 * pad);
+    const pts = v.map((y, i) => `${X(i).toFixed(1)},${Y(y).toFixed(1)}`).join(" ");
+    $("chart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Portefeuille de ${eur(v[0])} à ${eur(v[v.length - 1])}">
+      <line x1="0" x2="${W}" y1="${Y(S.capital)}" y2="${Y(S.capital)}" stroke="var(--line)" stroke-dasharray="4 4"/>
+      <polyline points="${pts}" fill="none" stroke="var(--ink)" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>
+      <p class="note">Pointillés : les ${eur(S.capital, 0)} de départ.</p>`;
+  }
+
+  const run = S.run && S.run.results;
+  $("rule").textContent = run
+    ? `Toutes ces méthodes tournent avec 100 € fictifs depuis le ${dfmt(run.start)} (${run.days} jour${run.days > 1 ? "s" : ""}). Une méthode ne remplace la vôtre qu'après 12 mois où elle fait mieux, en gain et en risque.`
+    : "Le classement apparaîtra après la première nuit de calcul.";
+  $("methods").innerHTML = run ? run.strategies.map(s => `<li class="${s.name === run.live ? "live" : ""}">
+      <span class="n">${NAMES[s.name] || s.name}${s.name === run.live ? '<span class="tag">votre méthode</span>' : ""}</span>
+      <span class="r ${s.ret > 0 ? "pos" : s.ret < 0 ? "neg" : ""}">${pct(s.ret)}</span>
+      <span class="s">Pire baisse ${pct(s.mdd)}${s.now.length ? ", détient " + s.now.join(", ").replace(/(\d+)%/g, "$1 %") : ", en euros"}</span></li>`).join("") : "";
+
+  const p = S.prefs;
+  $("p-orders").checked = p.orders !== false; $("p-weekly").checked = p.weekly_report !== false;
+  $("p-down").checked = p.engine_down !== false; $("p-drop").value = p.drop_24h_pct ?? 10;
+  $("test").hidden = !S.subs;
+  if (S.subs && !$("pushmsg").textContent) $("pushmsg").textContent = `${S.subs} appareil${S.subs > 1 ? "s" : ""} reçoi${S.subs > 1 ? "vent" : "t"} les alertes.`;
+
+  $("notes").innerHTML = S.notes.length ? S.notes.map(n => `<li><span class="t">${n.title}</span><br><small>${tfmt(n.ts)}</small><p>${n.body}</p></li>`).join("")
+    : `<li class="muted">Aucune alerte pour l'instant.</li>`;
+
+  $("stoptxt").textContent = S.stopped
+    ? "Le module est arrêté : il n'achète et ne vend plus rien. Vous pouvez le relancer à tout moment."
+    : `Bloque immédiatement tout achat et toute vente. Le module s'arrête aussi tout seul si le portefeuille passe sous ${eur(S.capital * (1 - S.stop_pct / 100), 0)}.`;
+  $("stop").textContent = S.stopped ? "Relancer le module" : "Arrêter le module";
+  $("upd").textContent = "Mis à jour à " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) + ".";
+}
+
+function savePrefs() {
+  clearTimeout(saveT);
+  saveT = setTimeout(async () => {
+    const prefs = { orders: $("p-orders").checked, weekly_report: $("p-weekly").checked, engine_down: $("p-down").checked, drop_24h_pct: +$("p-drop").value || 0 };
+    try { S.prefs = (await api("prefs", { prefs })).prefs; $("pushmsg").textContent = "Réglages enregistrés."; } catch { $("pushmsg").textContent = "Réglages non enregistrés : vérifiez la connexion."; }
+  }, 500);
+}
+["p-orders", "p-weekly", "p-down", "p-drop"].forEach(id => $(id).addEventListener("change", savePrefs));
+
+const b64 = s => { s = s.replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "="; return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
+$("push").addEventListener("click", async () => {
+  const msg = $("pushmsg");
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  if (/iPhone|iPad/.test(navigator.userAgent) && !standalone) {
+    msg.textContent = "Sur iPhone, ajoutez d'abord l'application à l'écran d'accueil : bouton Partager, puis « Sur l'écran d'accueil ». Ouvrez-la ensuite depuis son icône et touchez de nouveau ce bouton.";
+    return;
+  }
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) { msg.textContent = "Ce navigateur ne permet pas les alertes. Utilisez Safari sur iPhone ou Chrome sur Mac."; return; }
+  try {
+    if (await Notification.requestPermission() !== "granted") { msg.textContent = "Alertes refusées. Autorisez-les dans les réglages de l'appareil, rubrique Notifications."; return; }
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(S.vapid) });
+    await api("subscribe", { sub: sub.toJSON() });
+    msg.textContent = "Cet appareil recevra les alertes."; $("test").hidden = false;
+  } catch (e) { msg.textContent = "Activation impossible : " + e.message; }
+});
+$("test").addEventListener("click", async () => {
+  try { await api("test"); $("pushmsg").textContent = "Alerte de test envoyée : elle doit arriver d'ici une minute."; } catch { $("pushmsg").textContent = "Envoi impossible : vérifiez la connexion."; }
+});
+$("stop").addEventListener("click", async () => {
+  const stopping = !S.stopped;
+  if (stopping && !confirm("Arrêter le module ? Il n'achètera et ne vendra plus rien jusqu'à ce que vous le relanciez.")) return;
+  try { await api("stop", { stopped: stopping }); await load(); } catch { alert("Action impossible : vérifiez la connexion."); }
+});
+$("refresh").addEventListener("click", load);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && code()) load(); });
+setInterval(() => { if (!document.hidden && code()) load(); }, 5 * 60e3);
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+if (code()) load(); else showLogin();
+</script>
+</body>
+</html>
